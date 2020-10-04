@@ -10,8 +10,6 @@ SpotifyAPI::SpotifyAPI()
     connectAuth.setAuthorizationUrl(QUrl("https://accounts.spotify.com/authorize"));
     connectAuth.setAccessTokenUrl(QUrl("https://accounts.spotify.com/api/token"));
 
-    clientId = "faf2d6c003454464ac064bc6dc68c5b7";
-    clientSecret = "8c1330309e124b11ab5d6f329f4c0e53";
 
 
     connectAuth.setClientIdentifier(clientId);
