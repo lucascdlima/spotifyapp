@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QtUiTools>
 #include "spotifyapi.h"
-#include "datamodel.h"
+#include "treemodel.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
