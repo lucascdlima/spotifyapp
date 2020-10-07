@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1020</width>
-    <height>634</height>
+    <width>1028</width>
+    <height>662</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -26,7 +26,7 @@
       <x>10</x>
       <y>0</y>
       <width>1001</width>
-      <height>591</height>
+      <height>611</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="mainLayout" rowstretch="1,1,1,1,1,1,1,1" columnstretch="1,1,1,1,1,1,1,1">
@@ -128,15 +128,34 @@
           <x>10</x>
           <y>30</y>
           <width>851</width>
-          <height>72</height>
+          <height>32</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="searchHLayout">
          <item>
-          <widget class="QTextEdit" name="searchTxEdit"/>
+          <widget class="QTextEdit" name="searchTxEdit">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>1</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>30</height>
+            </size>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QRadioButton" name="artistRBt">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
             <string>Artist</string>
            </property>
@@ -203,10 +222,22 @@
           <x>10</x>
           <y>30</y>
           <width>851</width>
-          <height>72</height>
+          <height>61</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="logHLayout">
+         <property name="leftMargin">
+          <number>1</number>
+         </property>
+         <property name="topMargin">
+          <number>1</number>
+         </property>
+         <property name="rightMargin">
+          <number>1</number>
+         </property>
+         <property name="bottomMargin">
+          <number>1</number>
+         </property>
          <item>
           <widget class="QPlainTextEdit" name="logPTxEdit">
            <property name="readOnly">
@@ -244,7 +275,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1020</width>
+     <width>1028</width>
      <height>22</height>
     </rect>
    </property>
