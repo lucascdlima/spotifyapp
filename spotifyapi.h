@@ -8,9 +8,12 @@
 #include <QNetworkAccessManager>
 #include <QOAuth2AuthorizationCodeFlow>
 #include <QDesktopServices>
+#include <QXmlStreamReader>
+#include <QFile>
 #include <iostream>
 #include <sstream>
 #include "spotifyutils.h"
+#include "treemodel.h"
 
 using namespace std;
 
@@ -26,9 +29,10 @@ class SpotifyAPI: public QObject
     Q_OBJECT
 public:
 
-    SpotifyAPI();
+    SpotifyAPI(const char* fileName);
     ~SpotifyAPI();
 
+    bool ReadUserKeys(const char* fileName);
     void ConnectToServer();
     bool IsConnected();
     bool IsProcessingRequest();
@@ -37,7 +41,8 @@ public:
     void GetCurrentPlaylistsReply(QNetworkReply *network_reply);
     void GetPlaylistsTracks();
     void GetPlaylistsTracksReply(QNetworkReply *network_reply, int indice);
-    void SavePlaylistsJson();
+    void SavePlaylistsJsonFromWeb();
+    bool SavePlaylistsOffline(TreeModel *treemodel);
     void SearchArtist(string artist_name);
     void SearchArtistReply(QNetworkReply* network_reply);
     void SearchTopTracks(QString artist_id);
@@ -47,6 +52,8 @@ public:
     void AddTracksPlaylistWeb();
     void AddTracksPlaylistReply(QNetworkReply* network_reply);
     void ClearArtistData();
+    void SearchTrack(QString name);
+    void SearchTrackReply(QNetworkReply *network_reply);
 
     SpotifyPlaylist GetPlaylist();
 
@@ -62,6 +69,7 @@ signals:
     void UpdateOutputTextSignal();
     void ConnectedSignal();
     void ArtistTracksFoundSignal();
+    void TracksFoundSignal(QJsonObject data);
 
 
 private:
