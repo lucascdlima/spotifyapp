@@ -43,6 +43,13 @@ QVariant TreeItem::data(int column) const
     return itemData.at(column);
 }
 
+QString TreeItem::headData(int column) const
+{
+    if (column < 0 || column >= itemHeadData.size())
+        return QString();
+    return itemHeadData.at(column);
+}
+
 bool TreeItem::insertChildren(int position, int count, int columns)
 {
     if (position < 0 || position > childItems.size())
