@@ -146,7 +146,7 @@ SLOT Method called after get user name request returns.
 void SpotifyAPI::GetUserName(QNetworkReply* network_reply)
 {
     if (network_reply->error() != QNetworkReply::NoError) {
-        cout<<"Not able to get user data"<<endl;
+        qDebug()<<"Not able to get user data"<<endl;
         return;
     }
     const auto data = network_reply->readAll();
@@ -159,6 +159,8 @@ void SpotifyAPI::GetUserName(QNetworkReply* network_reply)
     emit UpdateOutputTextSignal(text,false);
 
     emit ConnectedSignal();
+
+    GetCurrentPlaylists();
 
     network_reply->deleteLater(); 
 }
@@ -196,6 +198,9 @@ void SpotifyAPI::GetCurrentPlaylistsReply(QNetworkReply *network_reply)
 
     //copy user playlists reply data in Json format
     userPlaylistsJson = root_obj;
+
+    userPlaylistsArray.clear();
+    userPlaylistsFullJson.clear();
 
     userPlaylistsArray.resize(ulong(items_array.size()));
     userPlaylistsFullJson.resize(ulong(items_array.size()));
