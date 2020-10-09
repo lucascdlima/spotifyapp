@@ -65,7 +65,7 @@ Method to insert ItemTree child objects in the current level.
 @param position position in the current tree where the children rows (TreeItem objects) will be inserted.
 @param count number of child TreeItem objects that will be inserted.
 @param columns number of columns data of each TreeItem child inserted.
-@return true if children are inserted.
+@return true if children are inserted correctly or false if position if out of childs range.
 */
 bool TreeItem::insertChildren(int position, int count, int columns)
 {
@@ -87,7 +87,7 @@ Method to insert data columns in the current TreeItem. The current parent and al
 will have columns isnerted.
 @param position position in the current tree where the data columns will be inserted.
 @param columns number of columns data that will be inserted.
-@return the head label of the data column.
+@return true if columns where inserted correctly, or false if position is out of data array size.
 */
 bool TreeItem::insertColumns(int position, int columns)
 {
