@@ -11,20 +11,15 @@ CONFIG += qt debug
 SOURCES += \
     main.cpp \
     mainwindow.cpp\
-    playlistsview.cpp \
     spotifyapi.cpp \
-    trackswidget.cpp \
     treeitem.cpp \
     treemodel.cpp
 
 HEADERS += \
     mainwindow.h \
     musicutils.h \
-    playlistsview.h \
     spotifyapi.h \
     spotifyutils.h \
-    track.h \
-    trackswidget.h \
     treeitem.h \
     treemodel.h
 
