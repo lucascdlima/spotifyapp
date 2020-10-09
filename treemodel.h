@@ -8,7 +8,16 @@
 #define MODEL_TYPE_PLAYLIST 0
 #define MODEL_TYPE_TRACK 1
 
-
+/**
+ * Implementation of TreeModel class based on Qt example to handle TreeItem objects and allow the Qt interface
+ * to display data of TreeItem objects using Qt view classes (QTreeView, QTableView, QListView, etc.)
+ *
+ * This class inherits the QAbstractItemModel implementing basic methods to allow data management and
+ * structure modifications in TreeItem objects.
+ * The data in TreeItem objects are acessed through QModelIndex indexes that are set inside the TreeModel class.
+ * It is through the referred QModelIndex indexes that interfaces (Qt views) access items data for displaying
+ * purposes.
+ */
 class TreeItem;
 
 class TreeModel : public QAbstractItemModel
@@ -16,14 +25,12 @@ class TreeModel : public QAbstractItemModel
     Q_OBJECT
 
 public:
-    TreeModel(const QStringList &headers, const QString &data,
-              QObject *parent = nullptr);
+    TreeModel(const QStringList &headers, QObject *parent = nullptr);
     ~TreeModel();
 
     int modelType;
 
     QVariant data(const QModelIndex &index, int role) const override;
-    QVariant headData(const QModelIndex &index) const;
     QVariant headerData(int section, Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
 
@@ -39,7 +46,6 @@ public:
                  int role = Qt::EditRole) override;
     bool setHeaderData(int section, Qt::Orientation orientation,
                        const QVariant &value, int role = Qt::EditRole) override;
-
     bool insertColumns(int position, int columns,
                        const QModelIndex &parent = QModelIndex()) override;
     bool removeColumns(int position, int columns,
@@ -49,11 +55,17 @@ public:
     bool removeRows(int position, int rows,
                     const QModelIndex &parent = QModelIndex()) override;
 
+    QString headData(const QModelIndex &index) const;
+    bool setHeadData(const QModelIndex &index, const QString &value);
+    QVariant findDataByHead(QString headName, QModelIndex &parent);
+
     bool saveModelDataOffline(QString filePath);
-    void setupModelData(const QString filePath);
-    void setupModelFromJson(QJsonObject json_root, int model_type);
+    bool loadModelData(const QString filePath);
+    bool loadModelData(QJsonObject parentJson, int model_type);
+    bool AddChildrenFromJson(QJsonObject parentJson, TreeItem *parentItem, QStringList itemsArrays, QStringList headers);
     int getModelType();
-    bool setupChildrenFromJsonArray(QJsonArray jsonArray, TreeItem *parentItem, QStringList headDataList);
+
+
 
 private:
     TreeItem *getItem(const QModelIndex &index) const;

@@ -3,7 +3,7 @@
 
 #include <QtWidgets>
 
-TreeModel::TreeModel(const QStringList &headers, const QString &data, QObject *parent)
+TreeModel::TreeModel(const QStringList &headers, QObject *parent)
     : QAbstractItemModel(parent)
 {
     QVector<QVariant> rootData;
@@ -14,8 +14,9 @@ TreeModel::TreeModel(const QStringList &headers, const QString &data, QObject *p
         rootHeadData<<header;
     }
 
+    //Sets head labels and data(empty) for root item in the tree head labels are the
+    //ones shown in QTreeView heads.
     rootItem = new TreeItem(rootData,rootHeadData);
-
 }
 
 
@@ -24,13 +25,26 @@ TreeModel::~TreeModel()
     delete rootItem;
 }
 
+/**
+*Method to get the number of column data in the Treeitem object given by its QMidelIndex. All TreeItem
+*objects have the same number of data columns in this tree model.
+*@param parent index correspondent to TreeItem.
+*@return the number of columns.
+*/
 int TreeModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
     return rootItem->columnCount();
 }
 
-
+/**
+*Method to get the data of a TreeItem using a QModelIndex parameter. Each column of data in the TreeItem
+*is represented by a QModelIntex object. During creation of QModelIndex indexes they are internally related to
+*TreeItem objects so that the TreeModel is able to access them later on in the code.
+*@param index correspondent to TreeItem data column.
+*@param role the Qt::DisplayRole of the data
+*@return the data in QVariant, if a non existent index is passed returns Null object
+*/
 QVariant TreeModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
@@ -44,7 +58,13 @@ QVariant TreeModel::data(const QModelIndex &index, int role) const
     return item->data(index.column());
 }
 
-QVariant TreeModel::headData(const QModelIndex &index) const
+/**
+*Method to get the head data (labels) of data columns in TreeItem objects. Same operations as
+*the method data() presented previously.
+*@param index correspondent to TreeItem data column.
+*@return the head label data. If a non existent index is passed, returns a Null object.
+*/
+QString TreeModel::headData(const QModelIndex &index) const
 {
     if (!index.isValid())
         return QString();
@@ -62,6 +82,12 @@ Qt::ItemFlags TreeModel::flags(const QModelIndex &index) const
     return Qt::ItemIsEditable | QAbstractItemModel::flags(index);
 }
 
+/**
+*Method to get the head data (labels) of data columns in TreeItem objects. Same operations as
+*the method data() presented previously.
+*@param index correspondent to TreeItem data column.
+*@return the head data in QString, if a non existent index is passed returns Null object.
+*/
 TreeItem *TreeModel::getItem(const QModelIndex &index) const
 {
     if (index.isValid()) {
@@ -72,7 +98,10 @@ TreeItem *TreeModel::getItem(const QModelIndex &index) const
     return rootItem;
 }
 
-
+/**
+*Overloaded method QAbstractModelItem::headerData(int section, Qt::Orientation orientation, int role)
+*Get the header data of the root TreeItem.
+*/
 QVariant TreeModel::headerData(int section, Qt::Orientation orientation,
                                int role) const
 {
@@ -82,9 +111,19 @@ QVariant TreeModel::headerData(int section, Qt::Orientation orientation,
     return QVariant();
 }
 
-
+/**
+*Method to get the index correspondent to a data column and TreeItem child row given the
+*parent index. Tgis method allows to get data intdex for all TreeItems, parents and childs in
+*the Tree structure.
+*@param row number of child row position in the TreeItem parent structure.
+*@param column number of column data position in the data array
+*@param parent the index of parent TreeItem object.
+*@return QModelIndex of the respective data in row and column positions, if the row or column don't exist or the parent
+* is invalid, return a Null object.
+*/
 QModelIndex TreeModel::index(int row, int column, const QModelIndex &parent) const
 {
+    //QModel indexes representing any column different from zero in TreeItem is not considered parent
     if (parent.isValid() && parent.column() != 0)
         return QModelIndex();
 
@@ -186,6 +225,13 @@ bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int rol
     return result;
 }
 
+bool TreeModel::setHeadData(const QModelIndex &index, const QString &value)
+{
+    TreeItem *item = getItem(index);
+    return item->setHeadData(index.column(), value);
+}
+
+
 bool TreeModel::setHeaderData(int section, Qt::Orientation orientation,
                               const QVariant &value, int role)
 {
@@ -200,135 +246,193 @@ bool TreeModel::setHeaderData(int section, Qt::Orientation orientation,
     return result;
 }
 
-void TreeModel::setupModelData(const QString filePath)
+/**
+*Method to create a Tree structure with parents and children TreeItem through a external saved data.
+*For this application the file data must be in (.json) format.
+*@param filePath the file name and path.
+*/
+bool TreeModel::loadModelData(const QString filePath)
 {
     modelType = MODEL_TYPE_PLAYLIST;
     QFile loadFile(filePath);
 
     if (!loadFile.open(QIODevice::ReadOnly)) {
         qWarning("Couldn't open save file.");
-        return;
+        return 0;
     }
 
     QByteArray saveData = loadFile.readAll();
 
+    QStringList childrenHeader = {"name","id","href","uri"};
+
     QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
     const auto root_obj = loadDoc.object();
-    if(root_obj.contains("items"))
+
+    QStringList arrayLevels = {"playlists", "tracks", "artists"};
+
+    //Insert recursively children in the rootItem
+    if(!AddChildrenFromJson(root_obj,rootItem,arrayLevels,childrenHeader))
     {
-        const auto playlist_array_json = root_obj.value("items").toArray();
-
-        if(playlist_array_json.size()>0)
-        {
-            for(int i=0; i<playlist_array_json.size(); i++)
-            {
-                const auto playlist_obj = playlist_array_json[i].toObject();
-                int data_count = playlist_obj.size()-1;
-                rootItem->insertChildren(rootItem->childCount(), 1, data_count);
-
-                bool headers_ok = playlist_obj.contains("name") && playlist_obj.contains("id") && playlist_obj.contains("uri") && playlist_obj.contains("href") && playlist_obj.contains("items");
-                if(headers_ok)
-                {
-                    rootItem->child(rootItem->childCount() - 1)->setData(0,QVariant(playlist_obj.value("name").toString()));
-                    rootItem->child(rootItem->childCount() - 1)->setData(1,QVariant(playlist_obj.value("id").toString()));
-                    rootItem->child(rootItem->childCount() - 1)->setData(2,QVariant(playlist_obj.value("href").toString()));
-                    rootItem->child(rootItem->childCount() - 1)->setData(3,QVariant(playlist_obj.value("uri").toString()));
-                    rootItem->child(rootItem->childCount() - 1)->setHeadData(0,"name");
-                    rootItem->child(rootItem->childCount() - 1)->setHeadData(1,"id");
-                    rootItem->child(rootItem->childCount() - 1)->setHeadData(2,"href");
-                    rootItem->child(rootItem->childCount() - 1)->setHeadData(3,"uri");
-
-
-                }
-
-                const auto tracks_array_json = playlist_obj.value("items").toArray();
-                TreeItem *playlist_item = rootItem->child(i);
-
-                for(int j=0; j< tracks_array_json.size(); j++)
-                {
-                    const auto track_obj = tracks_array_json[j].toObject();
-                    int data_count = track_obj.size();
-
-
-                    playlist_item->insertChildren(playlist_item->childCount(), 1, data_count);
-
-                    bool headers_ok = track_obj.contains("name") && track_obj.contains("id") && track_obj.contains("uri") && track_obj.contains("href");
-                    if(headers_ok)
-                    {
-                        playlist_item->child(playlist_item->childCount() - 1)->setData(0,QVariant(track_obj.value("name").toString()));
-                        playlist_item->child(playlist_item->childCount() - 1)->setData(1,QVariant(track_obj.value("id").toString()));
-                        playlist_item->child(playlist_item->childCount() - 1)->setData(2,QVariant(track_obj.value("href").toString()));
-                        playlist_item->child(playlist_item->childCount() - 1)->setData(3,QVariant(track_obj.value("uri").toString()));
-                        playlist_item->child(playlist_item->childCount() - 1)->setHeadData(0,"name");
-                        playlist_item->child(playlist_item->childCount() - 1)->setHeadData(1,"id");
-                        playlist_item->child(playlist_item->childCount() - 1)->setHeadData(2,"href");
-                        playlist_item->child(playlist_item->childCount() - 1)->setHeadData(3,"uri");
-
-                    }
-                    else
-                        return;
-
-                }
-
-            }
-        }
-        else
-            return;
-
+        qDebug()<<"Model not set"<<endl;
+        return 0;
     }
-    else
-        return;
+
+    return 1;
 
 }
 
+/**
+*Method to create a Tree structure with parents and children TreeItem through a external saved data.
+*For this application the file data must be in (.json) format.
+*@param filePath the file name and path.
+*/
+bool TreeModel::loadModelData(QJsonObject parentJson , int model_type)
+{
+    QStringList arrayLevels = {"playlists","tracks","artists"};
+    if(model_type == MODEL_TYPE_TRACK)
+        arrayLevels.pop_front();
+
+    QStringList childrenHeader = {"name","id","href","uri"};
+
+    //Insert recursively children in the rootItem
+    if(!AddChildrenFromJson(parentJson,rootItem,arrayLevels,childrenHeader))
+    {
+        qDebug()<<"Model not set "<<endl;
+        return 0;
+    }
+
+    return 1;
+}
+
+/**
+*Method recursive that add children to parent TreeItem and set respective data to the items models.
+*The param itemArrays determine if a parent ItemTree has children or not.
+*@param parentJson object with data of children itens data.
+*@param parentItem parent object that will receive TreeItem children objects.
+*@param itemsArrays list with the labels of children in the QJsonObject parentJson objects. In each recursion this list
+*is reduced by one element.
+*@param headers List with the head labels of TreeItem's data.
+*/
+bool TreeModel::AddChildrenFromJson(QJsonObject parentJson, TreeItem *parentItem, QStringList itemsArrays, QStringList headers)
+{
+    if(itemsArrays.size()==0)
+        return 0;
+
+    QString childrenLabel = itemsArrays[0];
+    itemsArrays.pop_front();
+
+    if(!parentJson.contains(childrenLabel))
+        return 0;
+
+    const auto childrenArrayJson = parentJson.value(childrenLabel).toArray();
+    if(childrenArrayJson.size()<=0)
+        return 0;
+
+    if(headers.size()==0)
+        return 0;
+
+    int dataCount = headers.size();
+
+    for(int i=0; i<childrenArrayJson.size(); i++)
+    {
+        const auto childItemJson = childrenArrayJson[i].toObject();
+
+        //Child item is created in parentItem item tree
+        parentItem->insertChildren(parentItem->childCount(), 1, rootItem->columnCount());
+
+        //loop to set child data
+        for (int j=0; j< dataCount;j++)
+        {
+            if(!childItemJson.contains(headers[j]))
+            {
+                qDebug()<<"Model child not created: Array object data incomplete"<<endl;
+                parentItem->removeChildren(0,parentItem->childCount());
+                return 0;
+            }
+            parentItem->child(parentItem->childCount() - 1)->setData(j,QVariant(childItemJson.value(headers[j]).toString()));
+            parentItem->child(parentItem->childCount() - 1)->setHeadData(j,headers[j]);
+        }
+
+        //Adds artist information to tracks column data for display purposes
+        if(parentJson.contains("artists"))
+        {
+            const auto childItemJson0 = childrenArrayJson[0].toObject();
+            parentItem->setData(parentItem->columnCount()-1,childItemJson0.value("name").toString());
+            parentItem->setHeadData(parentItem->columnCount()-1,"artist");
+        }
+
+        if(itemsArrays.size()==0)
+            return 1;
+        else
+        {   //Call the method again to insert children in the current inserted TreeItem objects
+            if(!AddChildrenFromJson(childItemJson,parentItem->child(parentItem->childCount() - 1),itemsArrays,headers))
+            {
+                parentItem->removeChildren(0,parentItem->childCount());
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+/**
+*Method to save the current user playlists Tree model in (.json). It crates a Json root object and adds information
+*from the TreeItem objects of the model.
+*@param filePath object with data of children itens data.
+*@return True if the model is saved correctly, false otherwise.
+*/
 bool TreeModel::saveModelDataOffline(QString filePath)
 {
+
     QJsonDocument playlistsJsonDoc;
     QJsonObject root_obj;
     root_obj.insert("info", QJsonValue::fromVariant("Document of Spotify playlists offline in JSOn format"));
     QJsonArray playlist_array;
 
+    QStringList childrenHeader = {"name","id","href","uri"};
+
     int N_playlists = rowCount();
     for(int i=0; i < N_playlists;i++)
     {
-        QJsonObject playlist_obj;
+        QJsonObject playlistObj;
+        //Get each playlist index to retrieve data
         auto playlists_item_index = index(i,0);
         if(hasIndex(i,0))
         {
-
-            auto data_index = index(i,0);
-            playlist_obj.insert("name",data_index.data().toString());
-            data_index = index(i,1);
-            playlist_obj.insert("id",data_index.data().toString());
-            data_index = index(i,2);
-            playlist_obj.insert("href",data_index.data().toString());
-            data_index = index(i,3);
-            playlist_obj.insert("uri",data_index.data().toString());
-
+            QModelIndex data_index;
+            for (int k=0;k< columnCount(playlists_item_index); k++)
+            {
+                //Get playlists data indexes and adds respective data to json object
+                auto data_index = index(i,k);
+                //Insert key-data pairs in playlist Json object
+                if(childrenHeader.contains(headData(data_index)))
+                    playlistObj.insert(headData(data_index),data_index.data().toString());
+            }
         }
         else
         {
             qDebug()<<"Error - Playlists not saved: Problem with child index"<<endl;
             return false;
         }
-        QJsonArray tracks_array;
+        QJsonArray tracksArray;
         int N_tracks = rowCount(playlists_item_index);
-        for(int k=0;k<N_tracks; k++)
+        for(int j=0;j<N_tracks; j++)
         {
-            if(hasIndex(k,0,playlists_item_index))
+            QJsonObject trackObj;
+            QModelIndex track_item_index;
+            if(hasIndex(j,0,playlists_item_index))
             {
-                QJsonObject track_obj;
+                //Get each track child index in the current playlist item
+                track_item_index = index(j,0,playlists_item_index);
 
-                auto data_index = index(k,0,playlists_item_index);
-                track_obj.insert("name",data_index.data().toString());
-                data_index = index(k,1,playlists_item_index);
-                track_obj.insert("id",data_index.data().toString());
-                data_index = index(k,2,playlists_item_index);
-                track_obj.insert("href",data_index.data().toString());
-                data_index = index(k,3,playlists_item_index);
-                track_obj.insert("uri",data_index.data().toString());
-                tracks_array.append(track_obj);
-
+                QModelIndex data_index;
+                for (int k=0;k< columnCount(track_item_index); k++)
+                {
+                    auto data_index = index(j,k,playlists_item_index);
+                    //Insert key-data pairs in track Json object
+                    if(childrenHeader.contains(headData(data_index)))
+                        trackObj.insert(headData(data_index),data_index.data().toString());
+                }
             }
             else
             {
@@ -336,14 +440,44 @@ bool TreeModel::saveModelDataOffline(QString filePath)
                 return false;
             }
 
+            QJsonArray artistsArray;
+            int N_artists= rowCount(track_item_index);
+            for(int r=0;r<N_artists; r++)
+            {
+                QModelIndex artist_item_index;
+                if(hasIndex(r,0,track_item_index))
+                {
+                    QJsonObject artistObj;
+
+                    //get child index of each artist item data in the current track item
+                    artist_item_index = index(r,0,track_item_index);
+
+                    QModelIndex data_index;
+                    for (int k=0;k< columnCount(artist_item_index); k++)
+                    {
+                        auto data_index = index(r,k,track_item_index);
+                        //Insert key-data pairs in artist Json object
+                        if(childrenHeader.contains(headData(data_index)))
+                            artistObj.insert(headData(data_index),data_index.data().toString());
+                    }
+                    artistsArray.append(artistObj);
+                }
+                else
+                {
+                    qDebug()<<"Error - Playlists not saved: Problem with child index"<<endl;
+                    return false;
+                }
+            }
+            trackObj.insert("artists",artistsArray);
+            tracksArray.append(trackObj);
+
         }
-        playlist_obj.insert("items",tracks_array);
-        playlist_array.append(playlist_obj);
+        playlistObj.insert("tracks",tracksArray);
+        playlist_array.append(playlistObj);
 
     }
 
-    root_obj.insert("items",playlist_array);
-
+    root_obj.insert("playlists",playlist_array);
 
     playlistsJsonDoc.setObject(root_obj);
 
@@ -358,135 +492,31 @@ bool TreeModel::saveModelDataOffline(QString filePath)
     {
         qDebug()<<"Error during write operation to file"<<endl;
         return false;
-
     }
 
     return true;
-
 }
 
-void TreeModel::setupModelFromJson(QJsonObject json_root,int model_type)
+/**
+*Method to get a column data of a TreeItem object with the given head label.
+*@param headName head label that identify the column data in search.
+*@param itemIndex index of the TreeItem object where data is stored.
+*@return returns the data in QVariant. If data is not found or the index argument is invalid, returns a Null object.
+*/
+QVariant TreeModel::findDataByHead(QString headName, QModelIndex &itemIndex)
 {
-    modelType = model_type;
-    if(json_root.isEmpty())
-    {
-        qDebug()<<"Model not created: Json object is empty"<<endl;
-        return;
-    }
+    if(!itemIndex.isValid())
+        return QVariant();
 
-    if(!json_root.contains("tracks"))
-    {
-        qDebug()<<"Model not created: Json object doesn't have tracks data"<<endl;
-        return;
-    }
-    const auto tracksArray = json_root.find("tracks")->toArray();
-    if(tracksArray.size()==0)
-    {
-        qDebug()<<"Model not created: Tracks not found"<<endl;
-        return;
-    }
-    int data_count = tracksArray[0].toObject().size()-1;
+    TreeItem *item = getItem(itemIndex);
+    if(item==rootItem)
+        return QVariant();
 
-    for (int i=0; i< tracksArray.size();i++)
-    {
-        rootItem->insertChildren(rootItem->childCount(), 1, data_count);
-        const auto trackObj = tracksArray[i].toObject();
-        rootItem->child(rootItem->childCount() - 1)->setData(0,QVariant(trackObj.value("name").toString()));
-        rootItem->child(rootItem->childCount() - 1)->setData(1,QVariant(trackObj.value("id").toString()));
-        rootItem->child(rootItem->childCount() - 1)->setData(2,QVariant(trackObj.value("href").toString()));
-        rootItem->child(rootItem->childCount() - 1)->setData(3,QVariant(trackObj.value("uri").toString()));
-        rootItem->child(rootItem->childCount() - 1)->setHeadData(0,"name");
-        rootItem->child(rootItem->childCount() - 1)->setHeadData(1,"id");
-        rootItem->child(rootItem->childCount() - 1)->setHeadData(2,"href");
-        rootItem->child(rootItem->childCount() - 1)->setHeadData(3,"uri");
-        if(!trackObj.contains("artists"))
-        {
-            rootItem->removeChildren(0,rootItem->childCount());
-            qDebug()<<"Model not created: Track artist not found"<<endl;
-            return;
-        }
-        const auto artistsArray = trackObj.value("artists").toArray();
+    for( int i=0; i< item->columnCount(); i++)
+        if(item->headData(i)==headName)
+            return item->data(i);
 
-        if(artistsArray.size()==0)
-        {
-            rootItem->removeChildren(0,rootItem->childCount());
-            qDebug()<<"Model not created: Track artist not found"<<endl;
-            return;
-        }
-
-        TreeItem *trackItem = rootItem->child(i);
-        QStringList childrenHeader = {"name","id","href","uri"};
-        if(!setupChildrenFromJsonArray(artistsArray,trackItem,childrenHeader))
-        {
-            rootItem->removeChildren(0,rootItem->childCount());
-            return;
-        }
-
-
-        /*for (int j=0; j< artistsArray.size();j++)
-        {
-            const auto artistObj = artistsArray[j].toObject();
-
-            int artistDataCount = artistObj.size();
-
-            trackItem->insertChildren(trackItem->childCount(), 1, artistDataCount);
-
-           if(!(artistObj.contains("name") && artistObj.contains("id") && artistObj.contains("uri") && artistObj.contains("href")))
-            {
-                rootItem->removeChildren(0,rootItem->childCount());
-                qDebug()<<"Model not created: Artist data incomplete not found"<<endl;
-                return;
-            }
-            trackItem->child(trackItem->childCount() - 1)->setData(0,QVariant(artistObj.value("name").toString()));
-            trackItem->child(trackItem->childCount() - 1)->setData(1,QVariant(artistObj.value("id").toString()));
-            trackItem->child(trackItem->childCount() - 1)->setData(2,QVariant(artistObj.value("href").toString()));
-            trackItem->child(trackItem->childCount() - 1)->setData(3,QVariant(artistObj.value("uri").toString()));
-            trackItem->child(trackItem->childCount() - 1)->setHeadData(0,"name");
-            trackItem->child(trackItem->childCount() - 1)->setHeadData(1,"id");
-            trackItem->child(trackItem->childCount() - 1)->setHeadData(2,"href");
-            trackItem->child(trackItem->childCount() - 1)->setHeadData(3,"uri");
-
-        }*/
-
-    }
-
-    qDebug()<<"Model created correctly"<<endl;
-
-
-}
-
-bool TreeModel::setupChildrenFromJsonArray(QJsonArray jsonArray, TreeItem *parentItem, QStringList headDataList)
-{
-    if(jsonArray.size()==0)
-    {
-        qDebug()<<"Model child not created: Json Array is empty"<<endl;
-        return 0;
-    }
-    for (int i=0; i< jsonArray.size();i++)
-    {
-        const auto childObj = jsonArray[i].toObject();
-
-        int dataCount = childObj.size();
-        if(headDataList.size()!=dataCount)
-        {
-            qDebug()<<"QJson array objects data and head data don't have same size"<<endl;
-            return 0;
-        }
-        parentItem->insertChildren(parentItem->childCount(), 1, dataCount);
-
-        for (int j=0; j< dataCount;j++)
-        {
-            if(!childObj.contains(headDataList[j]))
-            {
-                rootItem->removeChildren(0,rootItem->childCount());
-                qDebug()<<"Model child not created: Array object data incomplete"<<endl;
-                return 0;
-            }
-            parentItem->child(parentItem->childCount() - 1)->setData(j,QVariant(childObj.value(headDataList[j]).toString()));
-            parentItem->child(parentItem->childCount() - 1)->setHeadData(j,headDataList[j]);
-        }
-    }
-    return 1;
+    return QVariant();
 
 }
 
