@@ -6,6 +6,10 @@
 
 using namespace std;
 
+/**
+ * Implementation of basic class to handle tracks data.
+ * This class doens't have communication with User Interface.
+*/
 class Track{
 
 public:
@@ -16,9 +20,13 @@ protected:
 
 };
 
+/**
+ * Implementation of basic class to handle Playlists data. It is based in
+ * tree structure where playlists have tracks children.
+ * This class doens't have communication with User Interface.
+*/
 template <class T>
 class Playlist{
-
 public:
     void SetName(string text){ name = text;}
     string GetName(){return name;}

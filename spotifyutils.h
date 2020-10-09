@@ -3,6 +3,12 @@
 
 #include "musicutils.h"
 
+/**
+ * Implementation of SpotifyTrack that inherist the base class Track.
+ * This derived class implements adittional methods and handle specific data related to
+ * spotify data base.
+ * This class doens't have communication with User Interface.
+*/
 class SpotifyTrack: public Track
 {
 
@@ -20,6 +26,12 @@ private:
 
 };
 
+/**
+ * Implementation of SpotifyPlaylist that inherist the base class Playlist.
+ * This derived class implements adittional methods and handle specific data related to
+ * spotify data base.
+ * This class doens't have communication with User Interface.
+*/
 class SpotifyPlaylist: public Playlist<SpotifyTrack>
 {
 
