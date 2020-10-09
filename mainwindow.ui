@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1028</width>
-    <height>662</height>
+    <width>1174</width>
+    <height>666</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Spotify API</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="gridLayoutWidget">
@@ -25,8 +25,8 @@
      <rect>
       <x>10</x>
       <y>0</y>
-      <width>1001</width>
-      <height>611</height>
+      <width>1151</width>
+      <height>621</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="mainLayout" rowstretch="1,1,1,1,1,1,1,1" columnstretch="1,1,1,1,1,1,1,1">
@@ -55,13 +55,16 @@
          <rect>
           <x>0</x>
           <y>20</y>
-          <width>122</width>
+          <width>141</width>
           <height>551</height>
          </rect>
         </property>
-        <layout class="QVBoxLayout" name="playlistVLayout" stretch="1,1,1,1">
+        <layout class="QVBoxLayout" name="playlistVLayout" stretch="1,1,1,4">
          <property name="spacing">
           <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>5</number>
          </property>
          <item>
           <widget class="QPushButton" name="connectBt">
@@ -80,14 +83,14 @@
          <item>
           <widget class="QTextEdit" name="playlistNameTxEdit">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>1</horstretch>
-             <verstretch>1</verstretch>
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
             </sizepolicy>
            </property>
            <property name="maximumSize">
             <size>
-             <width>120</width>
+             <width>16777215</width>
              <height>30</height>
             </size>
            </property>
@@ -103,11 +106,14 @@
              <rect>
               <x>0</x>
               <y>29</y>
-              <width>121</width>
+              <width>131</width>
               <height>431</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="playGboxVLayout" stretch="0">
+             <property name="leftMargin">
+              <number>2</number>
+             </property>
              <item>
               <widget class="QPushButton" name="playBt">
                <property name="text">
@@ -139,16 +145,16 @@
          <rect>
           <x>10</x>
           <y>30</y>
-          <width>851</width>
-          <height>32</height>
+          <width>981</width>
+          <height>51</height>
          </rect>
         </property>
-        <layout class="QHBoxLayout" name="searchHLayout" stretch="1,1,1,1">
+        <layout class="QHBoxLayout" name="searchHLayout" stretch="4,1,1,1">
          <item>
           <widget class="QTextEdit" name="searchTxEdit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>1</horstretch>
+             <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
@@ -202,7 +208,7 @@
       <widget class="QGroupBox" name="tracksGBox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>1</horstretch>
+         <horstretch>2</horstretch>
          <verstretch>1</verstretch>
         </sizepolicy>
        </property>
@@ -213,9 +219,9 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>20</y>
-          <width>361</width>
-          <height>371</height>
+          <y>30</y>
+          <width>411</width>
+          <height>381</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="tracksVLayout"/>
@@ -245,8 +251,8 @@
          <rect>
           <x>10</x>
           <y>30</y>
-          <width>851</width>
-          <height>72</height>
+          <width>981</width>
+          <height>61</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="logHLayout" stretch="0">
@@ -277,7 +283,7 @@
       <widget class="QGroupBox" name="resultGBox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>1</horstretch>
+         <horstretch>2</horstretch>
          <verstretch>1</verstretch>
         </sizepolicy>
        </property>
@@ -289,11 +295,11 @@
          <rect>
           <x>10</x>
           <y>30</y>
-          <width>351</width>
-          <height>371</height>
+          <width>411</width>
+          <height>381</height>
          </rect>
         </property>
-        <layout class="QVBoxLayout" name="resultVLayout" stretch=""/>
+        <layout class="QVBoxLayout" name="resultVLayout"/>
        </widget>
       </widget>
      </item>
@@ -305,7 +311,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1028</width>
+     <width>1174</width>
      <height>22</height>
     </rect>
    </property>

@@ -62,7 +62,7 @@ MainWindow::~MainWindow()
 }
 
 /**
-SLOT function called after connect button is clicked.
+SLOT method called after connect button is clicked.
 It calls spotfy API to request connection for Spotify server.
 */
 void MainWindow::ConnectSpotifyClicked()
@@ -83,7 +83,7 @@ void MainWindow::ArtistTracksFoundSlot()
 }
 
 /**
-SLOT function called after search artist button clicked.
+SLOT method called after search artist button clicked.
 It calls spotfy API for requesting artist information and correspondent tracks.
 */
 void MainWindow::GetArtistTracksSlot()
@@ -103,7 +103,7 @@ void MainWindow::GetArtistTracksSlot()
 }
 
 /**
-SLOT function called by SpotfyAPI in order to show a message text in the interface.
+SLOT method called by SpotfyAPI in order to show a message text in the interface.
 @param text message text to be displayed on interface.
 @param clear param to clear edit box
 */
@@ -120,7 +120,7 @@ void MainWindow::UpdateOutputTextSlot(QString text, bool clear)
 }
 
 /**
-SLOT function called after create playlist button clicked.
+SLOT method called after create playlist button clicked.
 It creates a empty playlist in the TreeModel with name data set by the user on
 text edit.
 */
@@ -157,6 +157,9 @@ void MainWindow::CreatePlaylistSlot()
         const auto dataIndex = playlistModel->index(i,k);
         playlistModel->setHeadData(dataIndex,childrenHeader[k]);
     }
+
+    //Added code to create playlist online also.
+    spotify->CreatePlaylistWeb(playlist_name,false,"Playlist created by application in C++");
 }
 
 /**
@@ -416,4 +419,3 @@ void MainWindow::closeEvent(QCloseEvent *event)
     playlistModel->saveModelDataOffline("playlistsdata.json");
     QMainWindow::closeEvent(event);
 }
-
