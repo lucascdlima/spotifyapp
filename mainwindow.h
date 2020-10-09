@@ -30,26 +30,29 @@ private slots:
     void ConnectSpotifyClicked();
     void GetArtistTracksSlot();
     void CreatePlaylistSlot();
-    void GetPlaylistsSlot();
     void SearchClickedSlot();
 
-    //Slot methods called after a SpotifyAPI object operation return
-    void UpdateOutputTextSlot(SpotifyAPI *spotfy_sender);
+    //Slot methods called after a SpotifyAPI object sigal is emitted
+    void UpdateOutputTextSlot(QString text, bool clear);
     void ConnectGrantedSlot();
     void ArtistTracksFoundSlot();
     void TracksFoundSlot(QJsonObject data);
 
+    //Slot methos called after user interaction with interface
     void PlaylistSelected(const QModelIndex & index);
     void RemoveTrack();
     void AddTrack();
-
+    void PlayTracks();
 
 private:
     Ui::MainWindow *ui;
 
+    //Visualization objects to display data
     QTreeView *playlistsView;
     QTreeView *tracksView;
-    QTreeView * searchResultView;
+    QTreeView *searchResultView;
+
+    //Model to handle data (playlists/tracks/artists)
     TreeModel *playlistModel;
 
     //Spotfy handle to perform server requests and queries
