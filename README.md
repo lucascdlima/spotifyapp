@@ -1,2 +1,2 @@
 # spotifyapp
-Application in C++ to manage playlists by communicating with spotify server using the Spotify API
+Application in C++ to manage playlists and communicate with spotify server using the Spotify Web API
