@@ -62,8 +62,8 @@ MainWindow::~MainWindow()
 }
 
 /**
-SLOT method called after connect button is clicked.
-It calls spotfy API to request connection for Spotify server.
+*SLOT method called after connect button is clicked.
+*It calls spotify API to request connection for Spotify server.
 */
 void MainWindow::ConnectSpotifyClicked()
 {
@@ -83,8 +83,8 @@ void MainWindow::ArtistTracksFoundSlot()
 }
 
 /**
-SLOT method called after search artist button clicked.
-It calls spotfy API for requesting artist information and correspondent tracks.
+*SLOT method called after search artist button clicked.
+*It calls spotify API for requesting artist information and correspondent tracks.
 */
 void MainWindow::GetArtistTracksSlot()
 {
@@ -103,9 +103,9 @@ void MainWindow::GetArtistTracksSlot()
 }
 
 /**
-SLOT method called by SpotfyAPI in order to show a message text in the interface.
-@param text message text to be displayed on interface.
-@param clear param to clear edit box
+*SLOT method called by SpotfyAPI in order to show a message text in the interface.
+*@param text message text to be displayed on interface.
+*@param clear param to clear edit box
 */
 void MainWindow::UpdateOutputTextSlot(QString text, bool clear)
 {
@@ -120,9 +120,9 @@ void MainWindow::UpdateOutputTextSlot(QString text, bool clear)
 }
 
 /**
-SLOT method called after create playlist button clicked.
-It creates a empty playlist in the TreeModel with name data set by the user on
-text edit.
+*SLOT method called after create playlist button clicked.
+*It creates a empty playlist in the TreeModel with name data set by the user on
+*text edit.
 */
 void MainWindow::CreatePlaylistSlot()
 {
@@ -163,11 +163,11 @@ void MainWindow::CreatePlaylistSlot()
 }
 
 /**
-Method to define which rows and colums of the TreeModel data will be displayed in the interface.
-The visualization of data is based on QTreeView class. In this view only the playlist selected and
-respective tracks will be displayed.
-In the TreeModel exist an artist column in the tracks children to display the main artist and also
-artist childs of each track to store all the artists of a track.
+*Method to define which rows and colums of the TreeModel data will be displayed in the interface.
+*The visualization of data is based on QTreeView class. In this view only the playlist selected and
+*respective tracks will be displayed.
+*Obs: The TreeModel have a artist column in the tracks children to display the main artist and also
+*artist TreeItem childs of each track to store all the artists of a track.
 */
 void  MainWindow::SetTracksView()
 {
@@ -197,9 +197,9 @@ void  MainWindow::SetTracksView()
 }
 
 /**
-Method to define which rows and colums of the TreeModel data will be displayed in the Playlist view
-part of interface.
-The visualization of data is based on QTreeView class. In this view only the playlists names will be displayed.
+*Method to define which rows and colums of the TreeModel data will be displayed in the Playlist view
+*part of interface.
+*The visualization of data is based on QTreeView class. In this view only the playlists names will be displayed.
 */
 void MainWindow::SetPlayListView()
 {
@@ -220,10 +220,10 @@ void MainWindow::SetPlayListView()
 }
 
 /**
-Method SLOT called when a playlist item is selected in the playlist view.
-It will display in the tracks View only the playlist selected and respective tracks rows and artist columns data.
-The visualization of data is based on QTreeView class.
-@param index QModelIndex object of teh selected item in the playlist view
+*Method SLOT called when a playlist item is selected in the playlist view.
+*It will display in the tracks View only the playlist selected and respective tracks rows and artist columns data.
+*The visualization of data is based on QTreeView class.
+*@param index QModelIndex object of the selected item in the playlist view
 */
 void MainWindow::PlaylistSelected(const QModelIndex & index)
 {
@@ -240,8 +240,8 @@ void MainWindow::PlaylistSelected(const QModelIndex & index)
 }
 
 /**
-Method SLOT called when the remove track button is clicked.
-It removes the selected track from the ModelTree.
+*Method SLOT called when the remove track button is clicked.
+*It removes the selected track from the ModelTree.
 */
 void MainWindow::RemoveTrack()
 {
@@ -261,8 +261,8 @@ void MainWindow::RemoveTrack()
 }
 
 /**
-Method SLOT called when the search button is clicked.
-It call SpotifyAPI method SearchTrack() to acess apotify server.
+*Method SLOT called when the search button is clicked.
+*It call SpotifyAPI method SearchTrack() to acess apotify server.
 */
 void MainWindow::SearchClickedSlot()
 {
@@ -282,10 +282,10 @@ void MainWindow::SearchClickedSlot()
 }
 
 /**
-Method SLOT called after the query executed in SpotifyAPI SearchTrack() method returns.
-It gets the JsonObject data and creates a track model based on TreeModel class and display
-tracks founded in the search result tree view.
-@param data object data received from spotify server reply.
+*Method SLOT called after the query executed in SpotifyAPI SearchTrack() method returns.
+*It gets the JsonObject data and creates a track model based on TreeModel class and display
+*tracks founded in the search result tree view.
+*@param data object data received from spotify server reply.
 */
 void MainWindow::TracksFoundSlot(QJsonObject data)
 {
@@ -314,10 +314,10 @@ void MainWindow::TracksFoundSlot(QJsonObject data)
 }
 
 /**
-Method SLOT called after add track button is clicked on the interface.
-It gets the index of a track selected in the search results view and copy the data to a track child row
-that is inserted on the playlist TreeItem correspondent to the playlist index selected in the playlist tree view.
-The criation of child row and insertion of data is performed in the playlist TreeModel.
+*Method SLOT called after add track button is clicked on the interface.
+*It gets the index of a track selected in the search results view and copy the data to a track child row
+*that is inserted on the playlist TreeItem correspondent to the playlist index selected in the playlist tree view.
+*The criation of child row and insertion of data is performed in the playlist TreeModel.
 */
 void MainWindow::AddTrack()
 {
@@ -395,9 +395,9 @@ void MainWindow::AddTrack()
 }
 
 /**
-Method SLOT called after play track button is clicked on the interface to playback a spotify track or playlist.
-It gets the index of a track or playlist selected in the tracks view and calls the SpotifyAPI::PlayTracks(QString)
-passing the address uri of the respective track or playlist.
+*Method SLOT called after play track button is clicked on the interface to playback a spotify track or playlist.
+*It gets the index of a track or playlist selected in the tracks view and calls the SpotifyAPI::PlayTracks(QString)
+*passing the address uri of the respective track or playlist.
 */
 void MainWindow::PlayTracks()
 {

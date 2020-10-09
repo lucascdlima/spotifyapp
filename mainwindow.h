@@ -11,6 +11,11 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+/**
+ * Implementation of class MainWindow that inherits the base class QMainWindow.
+ * This class implements all funcionalities, layout management, interface components of the application
+ * to allow user interaction with spotify api.
+ */
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
