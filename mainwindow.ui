@@ -38,6 +38,12 @@
      </property>
      <item row="0" column="0" rowspan="8">
       <widget class="QGroupBox" name="playlistGBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
        <property name="title">
         <string/>
        </property>
@@ -53,7 +59,7 @@
           <height>551</height>
          </rect>
         </property>
-        <layout class="QVBoxLayout" name="playlistVLayout">
+        <layout class="QVBoxLayout" name="playlistVLayout" stretch="1,1,1,1">
          <property name="spacing">
           <number>0</number>
          </property>
@@ -101,7 +107,7 @@
               <height>431</height>
              </rect>
             </property>
-            <layout class="QVBoxLayout" name="playGboxVLayout">
+            <layout class="QVBoxLayout" name="playGboxVLayout" stretch="0">
              <item>
               <widget class="QPushButton" name="playBt">
                <property name="text">
@@ -119,6 +125,12 @@
      </item>
      <item row="0" column="1" colspan="7">
       <widget class="QGroupBox" name="searchGBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
        <property name="title">
         <string>Search on spotify</string>
        </property>
@@ -131,7 +143,7 @@
           <height>32</height>
          </rect>
         </property>
-        <layout class="QHBoxLayout" name="searchHLayout">
+        <layout class="QHBoxLayout" name="searchHLayout" stretch="1,1,1,1">
          <item>
           <widget class="QTextEdit" name="searchTxEdit">
            <property name="sizePolicy">
@@ -188,6 +200,12 @@
      </item>
      <item row="1" column="1" rowspan="6" colspan="3">
       <widget class="QGroupBox" name="tracksGBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
        <property name="title">
         <string>Playlist tracks</string>
        </property>
@@ -213,6 +231,12 @@
      </item>
      <item row="7" column="1" colspan="7">
       <widget class="QGroupBox" name="logGBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
        <property name="title">
         <string>Output log</string>
        </property>
@@ -222,10 +246,10 @@
           <x>10</x>
           <y>30</y>
           <width>851</width>
-          <height>61</height>
+          <height>72</height>
          </rect>
         </property>
-        <layout class="QHBoxLayout" name="logHLayout">
+        <layout class="QHBoxLayout" name="logHLayout" stretch="0">
          <property name="leftMargin">
           <number>1</number>
          </property>
@@ -251,6 +275,12 @@
      </item>
      <item row="1" column="5" rowspan="6" colspan="3">
       <widget class="QGroupBox" name="resultGBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
        <property name="title">
         <string>Search Results</string>
        </property>
@@ -263,7 +293,7 @@
           <height>371</height>
          </rect>
         </property>
-        <layout class="QVBoxLayout" name="resultVLayout"/>
+        <layout class="QVBoxLayout" name="resultVLayout" stretch=""/>
        </widget>
       </widget>
      </item>

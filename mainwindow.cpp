@@ -38,7 +38,6 @@ MainWindow::MainWindow(QWidget *parent)
     spotify = new SpotifyAPI("userkeys.xml");
 
     //Create connections of SIGNALS (actions) in SpotifyAPI to SLOTS (actions) in interface
-    //connect(spotify,&SpotifyAPI::UpdateOutputTextSignal,[=](){ this->UpdateOutputTextSlot(spotify);} );
     connect(spotify,&SpotifyAPI::UpdateOutputTextSignal,this, &MainWindow::UpdateOutputTextSlot);
     connect(spotify,&SpotifyAPI::ConnectedSignal,[=](){ this->ConnectGrantedSlot();} );
     connect(spotify,&SpotifyAPI::ArtistTracksFoundSignal,[=](){ this->ArtistTracksFoundSlot();} );
@@ -105,8 +104,8 @@ void MainWindow::GetArtistTracksSlot()
 
 /**
 SLOT function called by SpotfyAPI in order to show a message text in the interface.
-@param text QString with the message text to be displayed
-@param clear Bool clear edit box
+@param text message text to be displayed on interface.
+@param clear param to clear edit box
 */
 void MainWindow::UpdateOutputTextSlot(QString text, bool clear)
 {
@@ -283,7 +282,7 @@ void MainWindow::SearchClickedSlot()
 Method SLOT called after the query executed in SpotifyAPI SearchTrack() method returns.
 It gets the JsonObject data and creates a track model based on TreeModel class and display
 tracks founded in the search result tree view.
-@param data QJsonObject received from spotify server reply.
+@param data object data received from spotify server reply.
 */
 void MainWindow::TracksFoundSlot(QJsonObject data)
 {
@@ -313,8 +312,8 @@ void MainWindow::TracksFoundSlot(QJsonObject data)
 
 /**
 Method SLOT called after add track button is clicked on the interface.
-It gets the index of a track selected in the search results view copy the data to a track child row
-that is inserted on the playlist TreeItem correspondent to the playlist selected in the playlist tree view.
+It gets the index of a track selected in the search results view and copy the data to a track child row
+that is inserted on the playlist TreeItem correspondent to the playlist index selected in the playlist tree view.
 The criation of child row and insertion of data is performed in the playlist TreeModel.
 */
 void MainWindow::AddTrack()
