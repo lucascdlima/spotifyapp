@@ -6,8 +6,10 @@ SpotifyAPI::SpotifyAPI(const char* fileName)
     replyHandler = new QOAuthHttpServerReplyHandler(8080, this);
     isConnected = false;
 
+    //Read file with user keys data
     if(ReadUserKeys(fileName))
     {
+        //Setup connection data
         connectAuth.setReplyHandler(replyHandler);
         connectAuth.setAuthorizationUrl(QUrl("https://accounts.spotify.com/authorize"));
         connectAuth.setAccessTokenUrl(QUrl("https://accounts.spotify.com/api/token"));
@@ -15,10 +17,10 @@ SpotifyAPI::SpotifyAPI(const char* fileName)
 
         connectAuth.setClientIdentifier(clientId);
         connectAuth.setClientIdentifierSharedKey(clientSecret);
-        connectAuth.setScope("user-read-private user-top-read playlist-read-private playlist-modify-public playlist-modify-private");
+        connectAuth.setScope("user-read-private user-top-read playlist-read-private playlist-modify-public playlist-modify-private user-modify-playback-state");
 
-        replyProcessing = 0;
-
+        //Creates connections to Slots functions called after connection and autorization access
+        //to spotify server is established
         connect(&connectAuth, &QOAuth2AuthorizationCodeFlow::authorizeWithBrowser,
                 &QDesktopServices::openUrl);
 
@@ -30,12 +32,12 @@ SpotifyAPI::SpotifyAPI(const char* fileName)
 
     }
 
-
-
-
-
 }
 
+/**
+Method to read a xml file and set user keys: id and secret
+@param: fileName path/name description of then file.
+*/
 bool SpotifyAPI::ReadUserKeys(const char* fileName)
 {
     QFile userFile(fileName);
@@ -75,10 +77,8 @@ bool SpotifyAPI::ReadUserKeys(const char* fileName)
         return false;
     }
 
-
-
-
 }
+
 void SpotifyAPI::ConnectToServer()
 {
     connectAuth.grant();
@@ -95,6 +95,11 @@ bool SpotifyAPI::IsProcessingRequest()
     return processingRequest;
 }
 
+/**
+SLOT Method called when authorization status changes.
+It sends a message to user interface log editbox with the status.
+@param: status object that handle status information.
+*/
 void SpotifyAPI::AuthStatusChanged(QAbstractOAuth::Status status)
 {
     QString s;
@@ -105,82 +110,76 @@ void SpotifyAPI::AuthStatusChanged(QAbstractOAuth::Status status)
 
     if (status == QAbstractOAuth::Status::TemporaryCredentialsReceived) {
         s = "temp credentials";
-
     }
 
-    OutputMessage message{"Authorization status = " + s,false};
-    messagesArray.push_back(message);
-    emit UpdateOutputTextSignal();
-
-
+   //Sends message to interface log editbox
+   QString text = "Authorization status = " + s;
+   emit UpdateOutputTextSignal(text,false);
 }
 
+/**
+SLOT Method called when signal grant() is called after spotfy server grant access
+to client application. This method calls GetUserName(QNetworkReply*) method to retrieve user data.
+*/
 void SpotifyAPI::AccessGranted()
 {
     isConnected=true;
 
     token = connectAuth.token();
 
-    //cout<<"Token = "<<token.toStdString()<<endl<<endl;
     QUrl u ("https://api.spotify.com/v1/me");
 
-    OutputMessage message{"Client connected to spotfy server",false};
-    messagesArray.push_back(message);
-    emit UpdateOutputTextSignal();
+    emit UpdateOutputTextSignal("Client connected to spotfy server",false);
 
-    OutputMessage message2{"Token = " + token,false};
-    messagesArray.push_back(message2);
-    emit UpdateOutputTextSignal();
+    QString text = "Token = " + token;
+    emit UpdateOutputTextSignal(text,false);
 
     auto reply = connectAuth.get(u);
     connect(reply,&QNetworkReply::finished,[=](){ this->GetUserName(reply);} );
 
 }
 
+/**
+SLOT Method called after get user name request returns.
+@param: network_reply reply object with spotify user data in Json format.
+*/
 void SpotifyAPI::GetUserName(QNetworkReply* network_reply)
 {
     if (network_reply->error() != QNetworkReply::NoError) {
-        cout<<"Not able to get user info"<<endl;
+        cout<<"Not able to get user data"<<endl;
         return;
     }
     const auto data = network_reply->readAll();
-
-    cout<<"All data = "<<data.toStdString()<<endl;
-
 
     const auto document = QJsonDocument::fromJson(data);
     const auto root = document.object();
     userName = root.value("id").toString();
 
-    cout<<"Username = "<<userName.toStdString()<<endl;
-
-
-    OutputMessage message{"Client username = " + userName,false};
-    messagesArray.push_back(message);
-    emit UpdateOutputTextSignal();
+    QString text = "Client username = " + userName;
+    emit UpdateOutputTextSignal(text,false);
 
     emit ConnectedSignal();
 
-    network_reply->deleteLater();
-
-    // GetCurrentPlaylists();
-
+    network_reply->deleteLater(); 
 }
+
 
 void SpotifyAPI::GetCurrentPlaylists()
 {
+    QUrl url ("https://api.spotify.com/v1/users/" + userName + "/playlists");
 
-    QUrl u ("https://api.spotify.com/v1/users/" + userName + "/playlists");
-
-    replyProcessing+=1;
-
-    auto reply = connectAuth.get(u);
+    auto reply = connectAuth.get(url);
 
     connect(reply,&QNetworkReply::finished,[=](){ this->GetCurrentPlaylistsReply(reply);} );
 
-
 }
 
+/**
+SLOT Method called after a request to get user current playlists returns.
+This method saves the href of each playlist to perform new requests to get playlists full
+data (tracks and artists).
+@param: network_reply reply object with data in Json format.
+*/
 void SpotifyAPI::GetCurrentPlaylistsReply(QNetworkReply *network_reply)
 {
     if (network_reply->error() != QNetworkReply::NoError) {
@@ -190,20 +189,16 @@ void SpotifyAPI::GetCurrentPlaylistsReply(QNetworkReply *network_reply)
 
     const auto data = network_reply->readAll();
 
-
-    cout<<"current playlists data = "<<data.toStdString()<<endl<<endl;
-
     const auto document = QJsonDocument::fromJson(data);
     const auto root_obj = document.object();
 
-
     const auto items_array = root_obj.value("items").toArray();
 
-
+    //copy user playlists reply data in Json format
     userPlaylistsJson = root_obj;
 
     userPlaylistsArray.resize(ulong(items_array.size()));
-    userPlaylistsTracksJson.resize(ulong(items_array.size()));
+    userPlaylistsFullJson.resize(ulong(items_array.size()));
 
     for(int i=0; i<items_array.size(); i++)
     {
@@ -211,15 +206,16 @@ void SpotifyAPI::GetCurrentPlaylistsReply(QNetworkReply *network_reply)
         const auto tracks_obj = play_obj.value("tracks").toObject();
 
         userPlaylistsArray[i].SetHref(tracks_obj.value("href").toString().toStdString());
-
     }
-
-    replyProcessing-=1;
 
     GetPlaylistsTracks();
 
 }
 
+/**
+Method to request individual playlists data including tracks and artists to spotify server.
+The data received is saved in Json objects.
+*/
 void SpotifyAPI::GetPlaylistsTracks()
 {
     for (int i=0; i<userPlaylistsArray.size(); i++)
@@ -228,17 +224,18 @@ void SpotifyAPI::GetPlaylistsTracks()
 
         QUrl u (playlist_current.GetHref().c_str());
 
-        replyProcessing+=1;
+        //Request playlist full data
         auto reply = connectAuth.get(u);
 
         connect(reply,&QNetworkReply::finished,[=](){ this->GetPlaylistsTracksReply(reply, i);} );
 
-        while(!reply->isFinished() || replyProcessing)
+        while(!reply->isFinished())
         {
             QCoreApplication::processEvents();
         }
     }
 
+    SavePlaylistsJsonFromWeb("playlistsonline.json");
 
 }
 
@@ -251,204 +248,268 @@ void SpotifyAPI::GetPlaylistsTracksReply(QNetworkReply *network_reply, int indic
 
     const auto data = network_reply->readAll();
 
-
-    cout<<"playlist data = "<<data.toStdString()<<endl<<endl;
-
     const auto document = QJsonDocument::fromJson(data);
     const auto root_obj = document.object();
-    if(indice < userPlaylistsTracksJson.size())
-        userPlaylistsTracksJson[indice] = root_obj;
+    if(indice < userPlaylistsFullJson.size())
+        userPlaylistsFullJson[indice] = root_obj;
 
-    replyProcessing-=1;
+    network_reply->deleteLater();
+}
 
+bool SpotifyAPI::copyJsonData(QStringList jsonHeaders, QJsonObject &destData, QJsonObject sourceData)
+{
+    int n = jsonHeaders.count();
+    for(int i=0; i < n;i++)
+    {
+        if(!sourceData.contains(jsonHeaders[i]))
+        {
+            qDebug()<<"header not found in source json object"<<endl;
+            return 0;
+        }
+        destData.insert(jsonHeaders[i],sourceData.value(jsonHeaders[i]).toString());
+    }
+    return 1;
 
 }
 
-void SpotifyAPI::SavePlaylistsJsonFromWeb()
+/**
+Method to get the JsonObjects received from a client request to server of current playlists data and
+save data in file (.json format).
+@param fileName path and name of file where data will be saved.
+*/
+bool SpotifyAPI::SavePlaylistsJsonFromWeb(QString fileName)
 {
     QJsonDocument playlistsJsonDoc;
     QJsonObject root_obj;
     root_obj.insert("info", QJsonValue::fromVariant("Document of Spotify playlists in JSOn format"));
-    QJsonArray playlist_array;
+    QJsonArray playlistTargetArray;
 
-    const auto playlist_items_array = userPlaylistsJson.value("items").toArray();
+    const auto playlistsReplyArray = userPlaylistsJson.value("items").toArray();
+    QStringList headerList = {"name","id","href","uri"};
 
-    for(int i=0; i < playlist_items_array.size();i++)
+    //Get each playlist item basic data
+    for(int i=0; i < playlistsReplyArray.size();i++)
     {
-        QJsonObject playlist_obj;
-        playlist_obj.insert("name",playlist_items_array[i].toObject().value("name").toString());
-        playlist_obj.insert("id",playlist_items_array[i].toObject().value("id").toString());
-        playlist_obj.insert("href",playlist_items_array[i].toObject().value("href").toString());
-        playlist_obj.insert("uri",playlist_items_array[i].toObject().value("uri").toString());
+        QJsonObject playlistTarget;
+        copyJsonData(headerList,playlistTarget,playlistsReplyArray[i].toObject());
 
-        QJsonArray tracks_array;
+        QJsonArray TracksTargetArray;
+        const auto tracksReplyArray = userPlaylistsFullJson[i].value("items").toArray();
 
-        const auto playlist_items_array = userPlaylistsTracksJson[i].value("items").toArray();
-        for (int j=0; j<playlist_items_array.size(); j++)
+        //Get each track data of the parent playlist item
+        for (int j=0; j<tracksReplyArray.size(); j++)
         {
-            const auto playlist_track = playlist_items_array[j].toObject().value("track").toObject();
-            QJsonObject track_obj;
-            track_obj.insert("name",playlist_track.value("name").toString());
-            track_obj.insert("href",playlist_track.value("href").toString());
-            track_obj.insert("id",playlist_track.value("id").toString());
-            track_obj.insert("uri",playlist_track.value("uri").toString());
-            tracks_array.append(track_obj);
+            const auto trackReply = tracksReplyArray[j].toObject().value("track").toObject();
+            QJsonObject trackTarget;
+
+            if(!copyJsonData(headerList,trackTarget,trackReply))
+                return 0;
+
+            QJsonArray artistTargetArray;
+            const auto artistReplyArray = trackReply.value("artists").toArray();
+
+            //Get each artist data of the parent track item
+            for(int k=0; k<artistReplyArray.size(); k++)
+            {
+                const auto artistReplyItem = artistReplyArray[k].toObject();
+                QJsonObject artistTarget;
+
+                if(!copyJsonData(headerList,artistTarget,artistReplyItem))
+                    return 0;
+
+                artistTargetArray.append(artistTarget);
+            }
+            trackTarget.insert("artists",artistTargetArray);
+            TracksTargetArray.append(trackTarget);
         }
-
-        playlist_obj.insert("items",tracks_array);
-        playlist_array.append(playlist_obj);
-
+        playlistTarget.insert("tracks",TracksTargetArray);
+        playlistTargetArray.append(playlistTarget);
     }
 
-    root_obj.insert("items",playlist_array);
+    root_obj.insert("playlists",playlistTargetArray);
 
     playlistsJsonDoc.setObject(root_obj);
 
-    QFile saveFile(QStringLiteral("playlistsdata.json"));
+    QFile saveFile(fileName);
 
     if (!saveFile.open(QIODevice::WriteOnly)) {
         qWarning("Couldn't open save file.");
-        return;
+        return 0;
     }
 
     saveFile.write(playlistsJsonDoc.toJson());
-
+    return 1;
 }
 
-bool SpotifyAPI::SavePlaylistsOffline(TreeModel *treemodel)
+
+/**
+Method to for searching a track on spotify server by name. After the request is executed
+the reply data is processed in SearchTrackReply(QNetworkReply) method.
+@param trackName name of track to search.
+*/
+void SpotifyAPI::SearchTrack(QString trackName)
 {
-    QJsonDocument playlistsJsonDoc;
-    QJsonObject root_obj;
-    root_obj.insert("info", QJsonValue::fromVariant("Document of Spotify playlists in JSOn format"));
-    QJsonArray playlist_array;
+    QString url_search = "https://api.spotify.com/v1/search?";
 
-    int N_playlists = treemodel->rowCount();
-    for(int i=0; i < N_playlists;i++)
-    {
-        QJsonObject playlist_obj;
-        auto playlists_item_index = treemodel->index(i,0);
-        if(treemodel->hasIndex(i,0))
-        {
+    QString query = "q=";
 
-            //int N_data = treemodel->columnCount(playlists_item_index);
-            //for(int j=0; j< N_data; j++)
-            // {
-            auto data_index = treemodel->index(i,0);
-            playlist_obj.insert("name",data_index.data().toString());
-            data_index = treemodel->index(i,1);
-            playlist_obj.insert("id",data_index.data().toString());
-            data_index = treemodel->index(i,2);
-            playlist_obj.insert("href",data_index.data().toString());
-            data_index = treemodel->index(i,3);
-            playlist_obj.insert("uri",data_index.data().toString());
-            //}
+    trackName.replace(" ", "%20");
+    query+=trackName;
 
+    query +="&type=track&limit=5";
 
-        }
-        else
-        {
-            qDebug()<<"Error - Playlists not saved: Problem with child index"<<endl;
-            return false;
-        }
-        QJsonArray tracks_array;
-        int N_tracks = treemodel->rowCount(playlists_item_index);
-        for(int k=0;k<N_tracks; k++)
-        {
-            //const auto track_item_index = treemodel->index(k,0,playlists_item_index);
-            if(treemodel->hasIndex(k,0,playlists_item_index))
-            {
+    QString  result = url_search + query;
 
-                //int N_data = treemodel->columnCount(track_item_index);
-
-                QJsonObject track_obj;
-
-                auto data_index = treemodel->index(k,0,playlists_item_index);
-                track_obj.insert("name",data_index.data().toString());
-                data_index = treemodel->index(k,1,playlists_item_index);
-                track_obj.insert("id",data_index.data().toString());
-                data_index = treemodel->index(k,2,playlists_item_index);
-                track_obj.insert("href",data_index.data().toString());
-                data_index = treemodel->index(k,3,playlists_item_index);
-                track_obj.insert("uri",data_index.data().toString());
-                tracks_array.append(track_obj);
-
-            }
-            else
-            {
-                qDebug()<<"Error - Playlists not saved: Problem with child index"<<endl;
-                return false;
-            }
-
-        }
-        playlist_obj.insert("items",tracks_array);
-        playlist_array.append(playlist_obj);
-
-    }
-
-    root_obj.insert("items",playlist_array);
-
-
-    playlistsJsonDoc.setObject(root_obj);
-
-    QFile saveFile(QStringLiteral("playlistsdataoffline.json"));
-
-    if (!saveFile.open(QIODevice::WriteOnly)) {
-        qWarning("Couldn't open save file.");
-        return false;
-    }
-
-    if(saveFile.write(playlistsJsonDoc.toJson())==-1)
-    {
-        qDebug()<<"Error during write operation to file"<<endl;
-        return false;
-
-    }
-
-    return true;
-
-
-}
-
-void SpotifyAPI::SearchArtist(string artist_name)
-{
-
-    ClearArtistData();
-
-    string url_search = "https://api.spotify.com/v1/search?";
-
-    queryQ = "q=";
-
-    // Used to split string around spaces.
-    istringstream ss(artist_name);
-
-    bool first_call=true;
-    // Traverse through all words
-    while (ss) {
-        // Read a word
-        string word;
-        ss >> word;
-
-        if(word.compare("")!=0)
-        {
-            if(first_call)
-            {
-                queryQ += word;
-                first_call = false;
-            }
-            else
-                queryQ +="&20" + word;
-        }
-
-    }
-
-    queryQ +="&type=artist&limit=5";
-
-    string result = url_search + queryQ;
-
-    cout<<"URL search = "<<result<<endl;
-    QUrl query_url(result.c_str());
+    cout<<"URL search = "<<result.toStdString()<<endl;
+    QUrl query_url(result);
 
     QNetworkReply * reply = connectAuth.get(query_url);
+
+    connect(reply,&QNetworkReply::finished,[=](){ this->SearchTrackReply(reply);} );
+}
+
+void SpotifyAPI::SearchTrackReply(QNetworkReply* network_reply)
+{
+    if (network_reply->error() != QNetworkReply::NoError) {
+        cout<<"Unable to get tracks information"<<endl;
+        return;
+    }
+
+    const auto data = network_reply->readAll();
+    const auto document = QJsonDocument::fromJson(data);
+    const auto root_obj = document.object();
+
+    if(!root_obj.contains("tracks"))
+    {
+        qDebug()<<"Tracks not found"<<endl;
+        return;
+    }
+
+    //Create a target root json object so store all data tracks received
+    QJsonObject targeRoot;
+
+    QJsonArray targetTracksArray;
+    const auto tracksReplyFull = root_obj.value("tracks").toObject();
+    if(!tracksReplyFull.contains("items"))
+    {
+        qDebug()<<"Tracks not found"<<endl;
+        return;
+    }
+
+    QStringList headers = {"name","id","href","uri"};
+
+    const auto tracksReplyArray = tracksReplyFull.value("items").toArray();
+
+    //Copy tracks data from reply to target json objects
+    for(int i=0; i<tracksReplyArray.size();i++)
+    {
+        const auto trackReplyItem = tracksReplyArray[i].toObject();
+        QJsonObject targetTrackItem;
+
+        if(!copyJsonData(headers,targetTrackItem,trackReplyItem))
+            return;
+
+        if(!trackReplyItem.contains("artists"))
+        {
+            qDebug()<<"Tracks search error: Incomplete artist data received"<<endl;
+            return;
+        }
+
+        const auto artistsReplyArray =  trackReplyItem.value("artists").toArray();
+        QJsonArray targetArtistsArray;
+
+        // For each Track item received copy artists data from reply to target json objects
+        for(int j=0;j<artistsReplyArray.size();j++)
+        {
+            QJsonObject targetArtistItem;
+            const auto artistReplyItem = artistsReplyArray[j].toObject();
+
+            if(!copyJsonData(headers,targetArtistItem,artistReplyItem))
+                return;
+
+            targetArtistsArray.append(targetArtistItem);
+        }
+
+        targetTrackItem.insert("artists",targetArtistsArray);
+        targetTracksArray.append(targetTrackItem);
+    }
+    targeRoot.insert("tracks",targetTracksArray);
+
+    //Send data to interface
+    emit TracksFoundSignal(targeRoot);
+
+   QString text = "Tracks found : " + QString::number(tracksReplyArray.count());
+
+    emit UpdateOutputTextSignal(text,false);
+
+    network_reply->deleteLater();
+
+}
+
+/**
+Method for requesting to playback a track or playlist based on uri identifier.
+Request performed through PUT method.
+@param uri uir address of a playlist or track.
+*/
+void SpotifyAPI::PlayTracks(QString uri)
+{
+    QString url_play = "https://api.spotify.com/v1/me/player/play";
+
+    QString query = "q=";
+
+    QJsonObject json_obj;
+    QJsonDocument json_doc(json_obj);
+
+    //Create a Json object of the playlist or track uri to be played to send in the PUT request
+    json_obj.insert("context_uri",uri);
+
+    auto network_manager = connectAuth.networkAccessManager();
+
+    QNetworkRequest request(url_play);
+
+    QByteArray code;
+
+    //Setting request headers
+    QString auth_header("Bearer ");
+    code.append(auth_header + connectAuth.token());
+    request.setRawHeader("Authorization", code);
+
+    auto reply = network_manager->put(request,json_doc.toBinaryData());
+    connect(reply,&QNetworkReply::finished,[=](){ this->PlayTracksReply(reply);} );
+}
+
+void SpotifyAPI::PlayTracksReply(QNetworkReply *network_reply)
+{
+    const auto data = network_reply->readAll();
+    const auto document = QJsonDocument::fromJson(data);
+    const auto root_obj = document.object();
+
+    if (network_reply->error() != QNetworkReply::NoError) {
+        QString text = "Unable to play tracks: ";
+        text += data.toStdString().c_str();
+
+        emit UpdateOutputTextSignal(text,false);
+        return;
+    }
+
+    network_reply->deleteLater();
+}
+
+void SpotifyAPI::SearchArtist(QString artistName)
+{
+    QString url = "https://api.spotify.com/v1/search?";
+
+    QString query = "q=";
+
+    artistName.replace(" ", "%20");
+
+    query +="&type=artist&limit=5";
+
+    QString result = url + query;
+
+    QUrl queryUrl(result);
+
+    QNetworkReply * reply = connectAuth.get(queryUrl);
 
     connect(reply,&QNetworkReply::finished,[=](){ this->SearchArtistReply(reply);} );
 }
@@ -462,9 +523,6 @@ void SpotifyAPI::SearchArtistReply(QNetworkReply* network_reply)
 
     const auto data = network_reply->readAll();
 
-
-    //cout<<"artists data = "<<data.toStdString()<<endl<<endl;
-
     const auto document = QJsonDocument::fromJson(data);
     const auto root_obj = document.object();
 
@@ -474,60 +532,39 @@ void SpotifyAPI::SearchArtistReply(QNetworkReply* network_reply)
     QJsonObject artist_chosen_obj;
     if(items_array.size()>0)
     {
-        for (int item_index = 0; item_index < items_array.size(); ++item_index) {
-
+        for (int item_index = 0; item_index < items_array.size(); ++item_index)
             QJsonObject item_obj = items_array[item_index].toObject();
-            cout<<"artist found = "<<item_obj.value("name").toString().toStdString()<<endl<<endl;
-        }
+
         artist_chosen_obj = items_array[0].toObject();
 
-        artistId = artist_chosen_obj.value("id").toString();
-        artistName = artist_chosen_obj.value("name").toString();
+        QString artistId = artist_chosen_obj.value("id").toString();
+        QString artistName = artist_chosen_obj.value("name").toString();
 
-        cout<<"artist chosen: "<<artist_chosen_obj.value("name").toString().toStdString()<<" ID = "<<artistId.toStdString()<<endl;
-
-        // artist_reply_finished = true;
         network_reply->deleteLater();
 
+        QString text = "Artist found = " + artistName;
+        emit UpdateOutputTextSignal(text,false);
 
-        OutputMessage message{"Artist found = " + artistName,false};
-        messagesArray.push_back(message);
-        emit UpdateOutputTextSignal();
-
-        OutputMessage message2{"Artist ID = " + artistId,false};
-        messagesArray.push_back(message2);
-        emit UpdateOutputTextSignal();
-
+        QString text2 = "Artist ID = " + artistId;
+        emit UpdateOutputTextSignal(text2,false);
 
         SearchTopTracks(artistId);
-
-
     }
     else
     {
-        OutputMessage message{"Error: Artist NOT found",false};
-        messagesArray.push_back(message);
-        emit UpdateOutputTextSignal();
-
-        cout<<"Error when getting artist names"<<endl;
+        emit UpdateOutputTextSignal("Error: Artist NOT found",false);
         return;
     }
-
-
-
-    /*
-    string playlist_name = artistName.toStdString();
-    playlist_name+= "TOP";
-    string description = "Playlist created by cplusplus APP spotfy API";
-
-    //CreatePlaylist(playlist_name,false,description);
-    */
+    network_reply->deleteLater();
 
 }
 
+/**
+Method for requesting a search of top tracks of a given artist through its ID identifier.
+@param artist_id spotify ID identifier.
+*/
 void SpotifyAPI::SearchTopTracks(QString artist_id)
 {
-
     playlist.ClearPlaylist();
 
     string url_tracks1 = "https://api.spotify.com/v1/artists/";
@@ -572,26 +609,22 @@ void SpotifyAPI::SearchTopTracksReply(QNetworkReply* network_reply)
 
             SpotifyTrack track(trackname.toStdString(),trackid.toStdString(),trackuri.toStdString());
             playlist.AddTrack(track);
-
-
-            cout<<"track name = "<<track_obj.value("name").toString().toStdString()<< " / uri = "<<track_obj.value("uri").toString().toStdString()<<endl;
         }
 
-        string text = "Artist Tracks = " + playlist.GetTracksListStr("/");
-        OutputMessage message{text.c_str(),false};
-        messagesArray.push_back(message);
-        emit UpdateOutputTextSignal();
-
         emit ArtistTracksFoundSignal();
-
     }
-    else
-        cout<<"Error when getting tracks names"<<endl;
-
-
+    network_reply->deleteLater();
 }
 
-void SpotifyAPI::CreatePlaylistWeb(string playlist_name, bool is_public, string description)
+
+/**
+*Method for requesting to create a playlist on spotify server.
+*The request is performed through POST method.
+*@param playlist_name name of spotify playlist to be created
+*@param is_public param to set if the playlist will be public or private
+*@param description Description of playlist
+*/
+void SpotifyAPI::CreatePlaylistWeb(QString playlist_name, bool is_public, QString description)
 {
 
     string query = "https://api.spotify.com/v1/users/" + userName.toStdString() + "/playlists";
@@ -599,18 +632,17 @@ void SpotifyAPI::CreatePlaylistWeb(string playlist_name, bool is_public, string 
 
     QUrl query_url(query.c_str());
 
+    //Set playlist data to send in request
     QJsonObject playlist_obj;
-    playlist_obj.insert("name", QJsonValue::fromVariant(playlist_name.c_str()));
-    playlist_obj.insert("description", QJsonValue::fromVariant(description.c_str()));
+    playlist_obj.insert("name", QJsonValue::fromVariant(playlist_name));
+    playlist_obj.insert("description", QJsonValue::fromVariant(description));
     playlist_obj.insert("public", QJsonValue::fromVariant(is_public));
 
     QJsonDocument playlist_doc(playlist_obj);
 
-    cout<<"Creates playlist with data= "<<playlist_doc.toJson().toStdString()<<endl;
-
     auto network_manager = connectAuth.networkAccessManager();
 
-
+    //Set headers of request
     QNetworkRequest request(query_url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -624,14 +656,6 @@ void SpotifyAPI::CreatePlaylistWeb(string playlist_name, bool is_public, string 
     code.append(auth_header + connectAuth.token());
     request.setRawHeader("Authorization", code);
 
-    /* cout<<"Token = "<<connectAuth.token().toStdString()<<endl<<endl;
-    QList<QByteArray> headerList = request.rawHeaderList();
-
-       for (int i = 0; i < headerList.count(); ++i) {
-           cout<< "header = " << headerList[i].toStdString()<<endl;
-       }
-*/
-
     // Send request
     auto reply = network_manager->post(request, playlist_doc.toJson());
     connect(reply,&QNetworkReply::finished,[=](){ this->CreatePlaylistReply(reply);} );
@@ -641,18 +665,11 @@ void SpotifyAPI::CreatePlaylistWeb(string playlist_name, bool is_public, string 
 void SpotifyAPI::CreatePlaylistReply(QNetworkReply* network_reply)
 {
     if (network_reply->error() != QNetworkReply::NoError) {
-        cout<<"Unable criate playlist"<<endl;
-        cout<<"error = "<<network_reply->error()<<endl;
-
-        const auto data = network_reply->readAll();
-        cout<<"Error body data ="<<data.toStdString()<<endl;
-
+        qDebug()<<"Unable criate playlist"<<endl;
         return;
     }
 
     const auto data = network_reply->readAll();
-
-    cout<<"Playlist created info = "<<data.toStdString()<<endl;
 
     const auto document = QJsonDocument::fromJson(data);
     const auto root_obj = document.object();
@@ -670,36 +687,31 @@ void SpotifyAPI::CreatePlaylistReply(QNetworkReply* network_reply)
     playlist.SetName(name.toStdString());
     playlist.SetURI(uri.toStdString());
 
-
-    OutputMessage message{text,false};
-    messagesArray.push_back(message);
-    emit UpdateOutputTextSignal();
+    emit UpdateOutputTextSignal(text,false);
 
     network_reply->deleteLater();
 
-    AddTracksPlaylistWeb();
-
 }
 
+/**
+Method for requesting to add tracks to a given playlist on spotify server.
+This method requires that a class of SpotifyPlaylist be set.
+*/
 void SpotifyAPI::AddTracksPlaylistWeb()
 {
     if(!playlist.GetId().empty())
     {
         string query = "https://api.spotify.com/v1/playlists/" + playlist.GetId() + "/tracks?";
 
+        //Set tracks uri's chosen to be inserted in playlist
         string tracks_query = "uris=" + playlist.GetTracksUrisListStr(",");
         query += tracks_query;
 
         QUrl query_url(query.c_str());
 
-        cout<<"query create playlist= "<<query<<endl<<endl;
-
-        QJsonObject json_obj;
-        QJsonDocument json_doc(json_obj);
-
         auto network_manager = connectAuth.networkAccessManager();
 
-
+        //Set request data header
         QNetworkRequest request(query_url);
         request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -714,26 +726,17 @@ void SpotifyAPI::AddTracksPlaylistWeb()
         request.setRawHeader("Authorization", code);
 
         // Send request
-        auto reply = network_manager->post(request, QByteArray());//json_doc.toJson());
+        auto reply = network_manager->post(request, QByteArray());
         connect(reply,&QNetworkReply::finished,[=](){ this->AddTracksPlaylistReply(reply);} );
-
-
     }
-    else
-    {
-
-    }
-
 }
 
 void SpotifyAPI::AddTracksPlaylistReply(QNetworkReply* network_reply)
 {
     if (network_reply->error() != QNetworkReply::NoError) {
-        cout<<"Unable add tracks to playlist"<<endl;
-        cout<<"error = "<<network_reply->error()<<endl;
-
+        qDebug()<<"Unable add tracks to playlist"<<endl;
         const auto data = network_reply->readAll();
-        cout<<"Error body data ="<<data.toStdString()<<endl;
+        qDebug()<<"Error body data ="<<data<<endl;
 
         return;
     }
@@ -743,165 +746,11 @@ void SpotifyAPI::AddTracksPlaylistReply(QNetworkReply* network_reply)
     const auto document = QJsonDocument::fromJson(data);
     const auto root_obj = document.object();
 
-    QString text = "Tracks added succesfully \n ";
+    QString text = "Tracks added succesfully";
     text += "snapshot_id = " + root_obj.value("snapshot_id").toString();
-    OutputMessage message{text,false};
-    messagesArray.push_back(message);
-    emit UpdateOutputTextSignal();
-
-    cout<<"Tracks added to playlist = "<<data.toStdString()<<endl;
-}
-
-OutputMessage SpotifyAPI::GetLastMessage()
-{
-    OutputMessage result;
-    if(messagesArray.size()>0)
-    {
-        result = messagesArray[0];
-        messagesArray.erase(messagesArray.begin());
-    }
-
-    return result;
-
-}
-
-SpotifyPlaylist SpotifyAPI::GetPlaylist()
-{
-    return playlist;
-}
-
-void SpotifyAPI::ClearArtistData()
-{
-    artistName = "";
-    artistId="";
-}
-
-void SpotifyAPI::SearchTrack(QString trackName)
-{
-    QString url_search = "https://api.spotify.com/v1/search?";
-
-    QString query = "q=";
-
-    trackName.replace(" ", "%20");
-    query+=trackName;
-
-    /* auto nameParts = trackName.split(" ");
-
-    bool firstInsert = 1;
-   for (int i = 0; i<nameParts.size();i++)
-   {
-        if(!nameParts[i].isEmpty())
-        {
-            if(firstInsert)
-            {
-                query+= nameParts[i]+"&20";
-                firstInsert=false;
-            }
-            else
-            {
-
-            }
-
-        }
-   }
-   */
-
-    query +="&type=track&limit=5";
-
-    QString  result = url_search + query;
-
-    cout<<"URL search = "<<result.toStdString()<<endl;
-    QUrl query_url(result);
-
-    QNetworkReply * reply = connectAuth.get(query_url);
-
-    connect(reply,&QNetworkReply::finished,[=](){ this->SearchTrackReply(reply);} );
-}
-
-void SpotifyAPI::SearchTrackReply(QNetworkReply* network_reply)
-{
-    if (network_reply->error() != QNetworkReply::NoError) {
-        cout<<"Unable to get tracks information"<<endl;
-        return;
-    }
-
-    const auto data = network_reply->readAll();
-
-
-
-    const auto document = QJsonDocument::fromJson(data);
-    const auto root_obj = document.object();
-
-    if(!root_obj.contains("tracks"))
-    {
-        qDebug()<<"Tracks not found"<<endl;
-        return;
-    }
-    QJsonObject resp_root;
-
-    QJsonArray respTracksArray;
-    const auto tracksObj = root_obj.value("tracks").toObject();
-    if(!tracksObj.contains("items"))
-    {
-        qDebug()<<"Tracks not found"<<endl;
-        return;
-    }
-    const auto tracksArray = tracksObj.value("items").toArray();
-    for(int i=0; i<tracksArray.size();i++)
-    {
-        const auto trackItem = tracksArray[i].toObject();
-        QJsonObject respTrackItem;
-        if(!(trackItem.contains("href") && trackItem.contains("id")&&trackItem.contains("name")&&trackItem.contains("uri")))
-        {
-            qDebug()<<"Tracks search error: Incomplete track Data received"<<endl;
-            return;
-        }
-        respTrackItem.insert("name",trackItem.value("name"));
-        respTrackItem.insert("id",trackItem.value("id"));
-        respTrackItem.insert("href",trackItem.value("href"));
-        respTrackItem.insert("uri",trackItem.value("uri"));
-
-        if(!trackItem.contains("artists"))
-        {
-            qDebug()<<"Tracks search error: Incomplete artist data received"<<endl;
-            return;
-        }
-
-        const auto artistsArray =  trackItem.value("artists").toArray();
-        QJsonArray respArtistsArray;
-
-
-        for(int j=0;j<artistsArray.size();j++)
-        {
-            QJsonObject respArtistItem;
-            const auto artistItem = artistsArray[j].toObject();
-
-            if(!(artistItem.contains("href") && artistItem.contains("id")&&artistItem.contains("name")&&artistItem.contains("uri")))
-            {
-                qDebug()<<"Tracks search error: Incomplete artist data received"<<endl;
-                return;
-            }
-            respArtistItem.insert("name",artistItem.value("name"));
-            respArtistItem.insert("id",artistItem.value("id"));
-            respArtistItem.insert("href",artistItem.value("href"));
-            respArtistItem.insert("uri",artistItem.value("uri"));
-
-            respArtistsArray.append(respArtistItem);
-        }
-
-        respTrackItem.insert("artists",respArtistsArray);
-        respTracksArray.append(respTrackItem);
-    }
-    resp_root.insert("tracks",respTracksArray);
-
-    emit TracksFoundSignal(resp_root);
-
-    OutputMessage message{"Tracks found : " + QString::number(tracksArray.count()),false};
-    messagesArray.push_back(message);
-    emit UpdateOutputTextSignal();
+    emit UpdateOutputTextSignal(text,false);
 
     network_reply->deleteLater();
-
 
 }
 

@@ -17,13 +17,6 @@
 
 using namespace std;
 
-struct OutputMessage {
-    OutputMessage(QString text_in="", bool clear_in=false): text(text_in),clear(clear_in){ }
-    QString text;
-    bool clear;
-};
-
-
 class SpotifyAPI: public QObject
 {
     Q_OBJECT
@@ -36,29 +29,36 @@ public:
     void ConnectToServer();
     bool IsConnected();
     bool IsProcessingRequest();
+
     void GetUserName(QNetworkReply* network_reply);
+
     void GetCurrentPlaylists();
     void GetCurrentPlaylistsReply(QNetworkReply *network_reply);
+
     void GetPlaylistsTracks();
     void GetPlaylistsTracksReply(QNetworkReply *network_reply, int indice);
-    void SavePlaylistsJsonFromWeb();
-    bool SavePlaylistsOffline(TreeModel *treemodel);
-    void SearchArtist(string artist_name);
+
+    bool SavePlaylistsJsonFromWeb(QString fileName);
+
+    void SearchArtist(QString artistName);
     void SearchArtistReply(QNetworkReply* network_reply);
+
     void SearchTopTracks(QString artist_id);
     void SearchTopTracksReply(QNetworkReply* network_reply);
-    void CreatePlaylistWeb(string playlist_name, bool is_public, string description);
+
+    void CreatePlaylistWeb(QString playlist_name, bool is_public, QString description);
     void CreatePlaylistReply(QNetworkReply* network_reply);
+
     void AddTracksPlaylistWeb();
     void AddTracksPlaylistReply(QNetworkReply* network_reply);
-    void ClearArtistData();
+
     void SearchTrack(QString name);
     void SearchTrackReply(QNetworkReply *network_reply);
 
-    SpotifyPlaylist GetPlaylist();
+    void PlayTracks(QString uri);
+    void PlayTracksReply(QNetworkReply *network_reply);
 
-    OutputMessage GetLastMessage();
-    vector<OutputMessage> messagesArray;
+    SpotifyPlaylist GetPlaylist();
 
 
 private slots:
@@ -66,13 +66,16 @@ private slots:
     void AuthStatusChanged(QAbstractOAuth::Status status);
 
 signals:
-    void UpdateOutputTextSignal();
+    void UpdateOutputTextSignal(QString text, bool clear);
     void ConnectedSignal();
     void ArtistTracksFoundSignal();
     void TracksFoundSignal(QJsonObject data);
 
 
 private:
+
+    bool copyJsonData(QStringList jsonHeaders, QJsonObject &destData, QJsonObject sourceData);
+
     bool isConnected;
     QOAuthHttpServerReplyHandler* replyHandler;
     QOAuth2AuthorizationCodeFlow connectAuth;
@@ -82,20 +85,15 @@ private:
     QString userName;
 
     QString token;
-    string queryQ;
-    QString artistId;
-    QString artistName;
+
     vector<QString> artistTracksUri;
     SpotifyPlaylist playlist;
     vector<SpotifyPlaylist> playlistsUserArray;
     vector<SpotifyPlaylist> userPlaylistsArray;
-    vector<QJsonObject> playlistsJsonVector;
 
     QJsonObject userPlaylistsJson;
-    vector<QJsonObject> userPlaylistsTracksJson;
+    vector<QJsonObject> userPlaylistsFullJson;
 
-    int replyProcessing;
-    
 
 };
 
