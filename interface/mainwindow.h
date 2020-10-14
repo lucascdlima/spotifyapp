@@ -3,8 +3,8 @@
 
 #include <QMainWindow>
 #include <QtUiTools>
-#include "spotifyapi.h"
-#include "treemodel.h"
+#include "api/spotifyapi.h"
+#include "models/treemodel.h"
 
 
 QT_BEGIN_NAMESPACE

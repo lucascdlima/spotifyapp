@@ -10,21 +10,21 @@ CONFIG += qt debug
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp\
-    spotifyapi.cpp \
-    treeitem.cpp \
-    treemodel.cpp
+    interface/mainwindow.cpp\
+    api/spotifyapi.cpp \
+    models/treeitem.cpp \
+    models/treemodel.cpp
 
 HEADERS += \
-    mainwindow.h \
-    musicutils.h \
-    spotifyapi.h \
-    spotifyutils.h \
-    treeitem.h \
-    treemodel.h
+    interface/mainwindow.h \
+    models/musicutils.h \
+    api/spotifyapi.h \
+    models/spotifyutils.h \
+    models/treeitem.h \
+    models/treemodel.h
 
 FORMS += \
-    mainwindow.ui
+    interface/mainwindow.ui
 
 DESTDIR = /home/lucaslima/DesafioStone/spotifyapp/bin
 

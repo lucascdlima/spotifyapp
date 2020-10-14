@@ -12,8 +12,8 @@
 #include <QFile>
 #include <iostream>
 #include <sstream>
-#include "spotifyutils.h"
-#include "treemodel.h"
+#include "models/spotifyutils.h"
+#include "models/treemodel.h"
 
 using namespace std;
 
